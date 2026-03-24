@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information and balance.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "balance": { "type": "number", "description": "Current balance in USD" },
+        "totalEarned": { "type": "number", "description": "Lifetime earnings" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "balance"]
+    },
+    "Offer": {
+      "title": "CPA Offer",
+      "description": "An offer that users can complete to earn money.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "payout": { "type": "number", "description": "Payout amount in USD" },
+        "link": { "type": "string", "format": "uri" },
+        "category": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "paused"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "payout", "link", "status"]
+    },
+    "Lead": {
+      "title": "Lead Record",
+      "description": "A record of an offer completion attempt.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "offerId": { "type": "string" },
+        "offerTitle": { "type": "string" },
+        "payout": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "offerId", "status", "payout"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal Request",
+      "description": "A request from a user to withdraw their earnings.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "userId": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string" },
+        "details": { "type": "string", "description": "Payment details (e.g., PayPal email)" },
+        "status": { "type": "string", "enum": ["pending", "paid", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "method", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/offers/{offerId}": {
+      "schema": "Offer",
+      "description": "Available CPA offers"
+    },
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Offer completion records"
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": "Withdrawal",
+      "description": "Payment requests"
+    }
+  }
+}

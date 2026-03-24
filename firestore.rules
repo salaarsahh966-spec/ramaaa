@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: uid, email, displayName, role, balance, totalEarned, createdAt
+    //
+    // Collection: offers
+    // Fields: id, title, description, payout, link, category, status, createdAt
+    //
+    // Collection: leads
+    // Fields: id, userId, offerId, offerTitle, payout, status, createdAt, updatedAt
+    //
+    // Collection: withdrawals
+    // Fields: id, userId, amount, method, details, status, createdAt
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "salaarsahh966@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'balance']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['admin', 'user'] &&
+             data.balance is number && data.balance >= 0;
+    }
+
+    function isValidOffer(data) {
+      return data.keys().hasAll(['title', 'payout', 'link', 'status']) &&
+             data.title is string && data.title.size() > 0 &&
+             data.payout is number && data.payout >= 0 &&
+             data.link is string &&
+             data.status in ['active', 'paused'];
+    }
+
+    function isValidLead(data) {
+      return data.keys().hasAll(['userId', 'offerId', 'status', 'payout']) &&
+             data.userId is string &&
+             data.offerId is string &&
+             data.status in ['pending', 'approved', 'rejected'] &&
+             data.payout is number && data.payout >= 0;
+    }
+
+    function isValidWithdrawal(data) {
+      return data.keys().hasAll(['userId', 'amount', 'method', 'status']) &&
+             data.userId is string &&
+             data.amount is number && data.amount > 0 &&
+             data.method is string &&
+             data.status in ['pending', 'paid', 'rejected'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /offers/{offerId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isValidOffer(request.resource.data);
+    }
+
+    match /leads/{leadId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && isValidLead(request.resource.data) && (request.auth.uid == request.resource.data.userId || isAdmin());
+      allow update: if isAdmin() && isValidLead(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /withdrawals/{withdrawalId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && isValidWithdrawal(request.resource.data) && (request.auth.uid == request.resource.data.userId || isAdmin());
+      allow update: if isAdmin() && isValidWithdrawal(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}
