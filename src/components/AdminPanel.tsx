@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, orderBy, getDoc, increment } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Offer, Lead, Withdrawal, UserProfile } from '../types';
 import { Plus, Check, X, Users, DollarSign, List, BarChart3, Trash2, Edit3, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-export const AdminPanel: React.FC = () => {
+interface AdminPanelProps {
+  user: UserProfile;
+}
+
+export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
@@ -19,10 +23,19 @@ export const AdminPanel: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const unsubOffers = onSnapshot(query(collection(db, 'offers'), orderBy('createdAt', 'desc')), (s) => setOffers(s.docs.map(d => ({ id: d.id, ...d.data() } as Offer))));
-    const unsubLeads = onSnapshot(query(collection(db, 'leads'), orderBy('createdAt', 'desc')), (s) => setLeads(s.docs.map(d => ({ id: d.id, ...d.data() } as Lead))));
-    const unsubWithdrawals = onSnapshot(query(collection(db, 'withdrawals'), orderBy('createdAt', 'desc')), (s) => setWithdrawals(s.docs.map(d => ({ id: d.id, ...d.data() } as Withdrawal))));
-    const unsubUsers = onSnapshot(query(collection(db, 'users'), orderBy('createdAt', 'desc')), (s) => setUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as unknown as UserProfile))));
+    if (user?.email !== 'salaarsahh966@gmail.com') return;
+    const unsubOffers = onSnapshot(query(collection(db, 'offers'), orderBy('createdAt', 'desc')), (s) => setOffers(s.docs.map(d => ({ id: d.id, ...d.data() } as Offer))), (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'offers');
+    });
+    const unsubLeads = onSnapshot(query(collection(db, 'leads'), orderBy('createdAt', 'desc')), (s) => setLeads(s.docs.map(d => ({ id: d.id, ...d.data() } as Lead))), (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'leads');
+    });
+    const unsubWithdrawals = onSnapshot(query(collection(db, 'withdrawals'), orderBy('createdAt', 'desc')), (s) => setWithdrawals(s.docs.map(d => ({ id: d.id, ...d.data() } as Withdrawal))), (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'withdrawals');
+    });
+    const unsubUsers = onSnapshot(query(collection(db, 'users'), orderBy('createdAt', 'desc')), (s) => setUsers(s.docs.map(d => ({ uid: d.id, ...d.data() } as unknown as UserProfile))), (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'users');
+    });
 
     setLoading(false);
     return () => { unsubOffers(); unsubLeads(); unsubWithdrawals(); unsubUsers(); };

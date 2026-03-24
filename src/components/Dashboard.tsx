@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Lead, Withdrawal, UserProfile } from '../types';
 import { Wallet, History, CreditCard, Clock, CheckCircle2, XCircle, Send, AlertCircle, DollarSign } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -25,11 +25,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user }) => {
 
     const unsubscribeLeads = onSnapshot(leadsQ, (snapshot) => {
       setLeads(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lead)));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'leads');
     });
 
     const unsubscribeWithdrawals = onSnapshot(withdrawalsQ, (snapshot) => {
       setWithdrawals(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Withdrawal)));
       setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'withdrawals');
     });
 
     return () => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Offer, UserProfile } from '../types';
 import { ExternalLink, DollarSign, Tag, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -22,6 +22,8 @@ export const OfferWall: React.FC<OfferWallProps> = ({ user }) => {
       const offersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Offer));
       setOffers(offersData);
       setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'offers');
     });
     return () => unsubscribe();
   }, []);

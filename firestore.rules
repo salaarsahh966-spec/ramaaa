@@ -75,13 +75,16 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
-      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && isOwner(userId) && 
+                    (request.resource.data.role == 'user' && request.resource.data.balance == 0 || 
+                     (request.auth.token.email == "salaarsahh966@gmail.com" && request.auth.token.email_verified == true));
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    ((isOwner(userId) && request.resource.data.role == resource.data.role && request.resource.data.balance == resource.data.balance) || isAdmin());
       allow delete: if isAdmin();
     }
 
     match /offers/{offerId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create, update, delete: if isAdmin() && isValidOffer(request.resource.data);
     }
 

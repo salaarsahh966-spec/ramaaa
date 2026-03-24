@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { auth, db, handleFirestoreError, OperationType } from './firebase';
 import { UserProfile } from './types';
 import { Navbar } from './components/Navbar';
 import { OfferWall } from './components/OfferWall';
@@ -42,6 +42,8 @@ export default function App() {
             setUser(newUser);
           }
           setLoading(false);
+        }, (error) => {
+          handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
         });
 
         return () => unsubUser();
@@ -149,7 +151,7 @@ export default function App() {
           </>
         )}
         {view === 'dashboard' && user && <Dashboard user={user} />}
-        {view === 'admin' && user?.role === 'admin' && <AdminPanel />}
+        {view === 'admin' && user?.role === 'admin' && user?.email === 'salaarsahh966@gmail.com' && <AdminPanel user={user} />}
       </main>
 
       <footer className="bg-white border-t border-gray-100 pt-20 pb-10">
